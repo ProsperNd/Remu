@@ -18,6 +18,7 @@ import {
 import { addSampleProducts } from '../utils/addSampleProducts';
 import Link from 'next/link';
 import { FiPackage, FiDollarSign, FiShoppingBag, FiTrendingUp } from 'react-icons/fi';
+import Image from 'next/image';
 
 interface UserData {
   id: string;
@@ -41,6 +42,8 @@ interface Product {
   stock: number;
   category: string;
   createdAt: string;
+  description: string;
+  imageUrl: string;
 }
 
 interface Analytics {
@@ -225,6 +228,20 @@ export default function AdminPage() {
       alert('An error occurred while adding sample products.');
     } finally {
       setAddingProducts(false);
+    }
+  };
+
+  const handleDelete = async (productId: string) => {
+    if (!confirm('Are you sure you want to delete this product?')) {
+      return;
+    }
+
+    try {
+      await deleteDoc(doc(db, 'products', productId));
+      setProducts(products.filter(product => product.id !== productId));
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      alert('Failed to delete product. Please try again.');
     }
   };
 
@@ -501,15 +518,27 @@ export default function AdminPage() {
                 {products.slice(0, 10).map((product) => (
                   <tr key={product.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {product.name}
+                      <div className="flex items-center">
+                        <div className="h-10 w-10 flex-shrink-0">
+                          <div className="relative h-10 w-10 rounded-full overflow-hidden">
+                            <Image
+                              src={product.imageUrl}
+                              alt={product.name}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-500">{product.category}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">${product.price}</div>
+                      <div className="text-sm text-gray-900">${product.price.toFixed(2)}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className={`text-sm ${product.stock < 10 ? 'text-red-600' : 'text-gray-900'}`}>
@@ -518,6 +547,20 @@ export default function AdminPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(product.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <Link
+                        href={`/admin/edit-product/${product.id}`}
+                        className="text-blue-600 hover:text-blue-900 mr-4"
+                      >
+                        Edit
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(product.id)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Delete
+                      </button>
                     </td>
                   </tr>
                 ))}

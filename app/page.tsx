@@ -7,6 +7,7 @@ import { Product } from './utils/sampleProducts';
 import Header from './components/Header';
 import Image from 'next/image';
 import Link from 'next/link';
+import ProductList from './components/ProductList';
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -134,6 +135,11 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <div className="max-w-7xl mx-auto py-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8 px-6">Featured Products</h1>
+        <ProductList />
+      </div>
     </main>
   );
 } 

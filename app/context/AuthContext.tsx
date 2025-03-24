@@ -7,7 +7,8 @@ import {
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
   onAuthStateChanged,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  User,
 } from 'firebase/auth';
 import { 
   doc, 
@@ -21,27 +22,37 @@ import {
 } from 'firebase/firestore';
 import { auth, db } from '../firebase/config';
 
-interface User extends FirebaseUser {
-  isAdmin?: boolean;
-  phone?: string;
-  referralCode?: string;
+interface UserData extends User {
   points?: number;
+  referralCode?: string;
+  phoneNumber?: string;
+  isAdmin?: boolean;
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: UserData | null;
   loading: boolean;
   error: string | null;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, name: string, phone: string, referralCode?: string) => Promise<void>;
-  signOut: () => Promise<void>;
+  signUp: (email: string, password: string, phoneNumber: string, referralCode: string) => Promise<void>;
+  logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  loading: true,
+  error: null,
+  signIn: async () => {},
+  signUp: async () => {},
+  logout: async () => {},
+  resetPassword: async () => {},
+});
+
+export const useAuth = () => useContext(AuthContext);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,10 +66,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Merge Firebase user with Firestore data
         setUser({
           ...firebaseUser,
-          isAdmin: userData?.isAdmin || false,
-          phone: userData?.phone,
-          referralCode: userData?.referralCode,
           points: userData?.points || 0,
+          referralCode: userData?.referralCode || '',
+          phoneNumber: userData?.phoneNumber || '',
+          isAdmin: userData?.isAdmin || false,
         });
       } else {
         setUser(null);
@@ -92,45 +103,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return `${name.substring(0, 4).toUpperCase()}${randomNum}`;
   };
 
-  const signUp = async (email: string, password: string, name: string, phone: string, referralCode?: string) => {
+  const signUp = async (email: string, password: string, phoneNumber: string, referralCode: string) => {
     try {
       setError(null);
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // Generate a unique referral code for the new user
-      const newUserReferralCode = generateReferralCode(name);
+      const { user } = await createUserWithEmailAndPassword(auth, email, password);
       
       // Create user document in Firestore
-      const userData = {
-        name,
+      await setDoc(doc(db, 'users', user.uid), {
         email,
-        phone,
-        referralCode: newUserReferralCode,
+        phoneNumber,
+        referralCode,
         points: 0,
-        createdAt: new Date().toISOString(),
         isAdmin: false,
-      };
+        createdAt: new Date().toISOString(),
+      });
 
-      await setDoc(doc(db, 'users', userCredential.user.uid), userData);
-
-      // If a referral code was provided, validate and update points
+      // If there's a referral code, update referrer's points
       if (referralCode) {
-        // Find the referring user
-        const usersRef = collection(db, 'users');
-        const q = query(usersRef, where('referralCode', '==', referralCode));
-        const querySnapshot = await getDocs(q);
-        
-        if (!querySnapshot.empty) {
-          const referringUser = querySnapshot.docs[0];
-          // Update referring user's points
-          await updateDoc(doc(db, 'users', referringUser.id), {
-            points: (referringUser.data().points || 0) + 100
-          });
-          // Give points to new user
-          await updateDoc(doc(db, 'users', userCredential.user.uid), {
-            points: 50,
-            referredBy: referringUser.id
-          });
+        const usersRef = doc(db, 'users', referralCode);
+        const referrerDoc = await getDoc(usersRef);
+        if (referrerDoc.exists()) {
+          await setDoc(usersRef, {
+            points: (referrerDoc.data().points || 0) + 100,
+          }, { merge: true });
         }
       }
     } catch (err: any) {
@@ -147,7 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signOut = async () => {
+  const logout = async () => {
     try {
       setError(null);
       await firebaseSignOut(auth);
@@ -181,7 +176,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     error,
     signIn,
     signUp,
-    signOut,
+    logout,
     resetPassword,
   };
 
@@ -190,12 +185,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       {!loading && children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 } 

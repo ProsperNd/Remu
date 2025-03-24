@@ -7,6 +7,7 @@ const nextConfig = {
         hostname: '**',
       },
     ],
+    unoptimized: true,
   },
   // Ensure environment variables are available
   env: {

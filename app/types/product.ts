@@ -3,9 +3,11 @@ export interface Product {
   name: string;
   description: string;
   price: number;
-  category: string;
   imageUrl: string;
+  category: string;
   stock: number;
-  createdAt: string;
-  updatedAt: string;
+  sizes?: string[];
+  colors?: string[];
+  createdAt?: Date;
+  updatedAt?: Date;
 } 

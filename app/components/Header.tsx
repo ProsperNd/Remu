@@ -15,7 +15,7 @@ import { useAuth } from '../context/AuthContext';
 
 export default function Header() {
   const router = useRouter();
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [showUserMenu, setShowUserMenu] = useState(false);
 
@@ -28,7 +28,7 @@ export default function Header() {
 
   const handleSignOut = async () => {
     try {
-      await signOut();
+      await logout();
       router.push('/auth');
     } catch (error) {
       console.error('Error signing out:', error);
@@ -75,7 +75,7 @@ export default function Header() {
             {user && (
               <Link href="/referrals" className="text-white hover:text-secondary-200 relative">
                 <GiftIcon className="h-6 w-6" />
-                {user?.points > 0 && (
+                {user.points && user.points > 0 && (
                   <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                     {user.points}
                   </span>

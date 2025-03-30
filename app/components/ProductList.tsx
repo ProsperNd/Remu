@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -13,17 +13,20 @@ interface Product {
   description: string;
   imageUrl: string;
   category: string;
+  createdAt: string;
 }
 
 export default function ProductList() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const productsRef = collection(db, 'products');
-        const snapshot = await getDocs(productsRef);
+        const q = query(productsRef, orderBy('createdAt', 'desc'));
+        const snapshot = await getDocs(q);
         const productsData = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
@@ -31,6 +34,7 @@ export default function ProductList() {
         setProducts(productsData);
       } catch (error) {
         console.error('Error fetching products:', error);
+        setError('Failed to load products. Please try again later.');
       } finally {
         setLoading(false);
       }
@@ -43,6 +47,22 @@ export default function ProductList() {
     return (
       <div className="flex justify-center items-center min-h-[200px]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-600">{error}</p>
+      </div>
+    );
+  }
+
+  if (products.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-600">No products found.</p>
       </div>
     );
   }

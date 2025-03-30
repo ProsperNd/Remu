@@ -1,21 +1,16 @@
+import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import { AuthProvider } from './context/AuthContext';
 import './globals.css';
+import { AuthProvider } from './context/AuthContext';
+import { CartProvider } from './context/CartContext';
+import Header from './components/Header';
 
-const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  fallback: ['system-ui', 'Arial', 'sans-serif'],
-});
+const inter = Inter({ subsets: ['latin'] });
 
-export const metadata = {
-  title: 'Remu - Online Shopping',
-  description: 'Shop the latest trends at unbeatable prices',
+export const metadata: Metadata = {
+  title: 'ReMu - Your One-Stop Shop',
+  description: 'Shop the latest trends with ReMu',
 };
-
-function ClientWrapper({ children }: { children: React.ReactNode }) {
-  return <AuthProvider>{children}</AuthProvider>;
-}
 
 export default function RootLayout({
   children,
@@ -23,9 +18,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.className}>
-      <body className="min-h-screen bg-gray-50">
-        <ClientWrapper>{children}</ClientWrapper>
+    <html lang="en">
+      <body className={inter.className}>
+        <AuthProvider>
+          <CartProvider>
+            <Header />
+            {children}
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );

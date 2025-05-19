@@ -32,12 +32,12 @@ export default function CartPage() {
         <p className="text-lg text-gray-600 mb-8">
           You haven't added any items to your cart yet.
         </p>
-        <Link
-          href="/"
+            <Link
+              href="/"
           className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary-dark transition duration-300"
-        >
-          Continue Shopping
-        </Link>
+            >
+              Continue Shopping
+            </Link>
       </div>
     );
   }
@@ -74,10 +74,10 @@ export default function CartPage() {
                   {/* Product */}
                   <div className="col-span-6 flex items-center gap-4">
                     <div className="relative h-20 w-20 rounded-md overflow-hidden bg-gray-100 flex-shrink-0">
-                      <Image
-                        src={item.imageUrl}
-                        alt={item.name}
-                        fill
+                    <Image
+                      src={item.imageUrl}
+                      alt={item.name}
+                      fill
                         className="object-cover"
                       />
                     </div>
@@ -125,7 +125,7 @@ export default function CartPage() {
 
                   {/* Total */}
                   <div className="col-span-2 text-center font-medium text-gray-900">
-                    ${(item.price * item.quantity).toFixed(2)}
+                      ${(item.price * item.quantity).toFixed(2)}
                   </div>
                 </div>
               ))}
@@ -139,12 +139,12 @@ export default function CartPage() {
               >
                 Clear Cart
               </button>
-              <Link
-                href="/"
+                <Link
+                  href="/"
                 className="text-primary hover:text-primary-dark font-medium"
-              >
-                Continue Shopping
-              </Link>
+                >
+                  Continue Shopping
+                </Link>
             </div>
           </div>
         </div>

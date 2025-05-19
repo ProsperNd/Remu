@@ -6,7 +6,7 @@ import { db } from '../../firebase/config';
 import { Product } from '../../utils/sampleProducts';
 import Image from 'next/image';
 import { ShoppingCartIcon } from '@heroicons/react/24/outline';
-import { useCart } from '../../contexts/CartContext';
+import { useCart } from '../../context/CartContext';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 

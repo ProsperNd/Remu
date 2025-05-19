@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
+import Link from 'next/link';
 
 export default function AuthPage() {
   const router = useRouter();
@@ -12,12 +13,66 @@ export default function AuthPage() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    confirmPassword: '',
+    username: '',
     phoneNumber: '',
     referralCode: '',
   });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+    let isValid = true;
+
+    // Email validation
+    if (!formData.email) {
+      errors.email = 'Email is required';
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.email = 'Email is invalid';
+      isValid = false;
+    }
+
+    // Simple password validation
+    if (!formData.password) {
+      errors.password = 'Password is required';
+      isValid = false;
+    } else if (formData.password.length < 6) {
+      errors.password = 'Password must be at least 6 characters';
+      isValid = false;
+    }
+
+    if (isSignUp) {
+      // Username validation
+      if (!formData.username) {
+        errors.username = 'Username is required';
+        isValid = false;
+      }
+
+      // Simple phone validation
+      if (!formData.phoneNumber) {
+        errors.phoneNumber = 'Phone number is required';
+        isValid = false;
+      }
+
+      // Confirm password
+      if (formData.password !== formData.confirmPassword) {
+        errors.confirmPassword = 'Passwords do not match';
+        isValid = false;
+      }
+    }
+
+    setFormErrors(errors);
+    return isValid;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -25,6 +80,7 @@ export default function AuthPage() {
         await signUp(
           formData.email,
           formData.password,
+          formData.username,
           formData.phoneNumber,
           formData.referralCode
         );
@@ -42,14 +98,24 @@ export default function AuthPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Clear error when user types
+    if (formErrors[name]) {
+      setFormErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100 p-4">
       <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h2 className="text-3xl font-bold text-center mb-8 text-orange-600">
-          {isSignUp ? 'Create Account' : 'Welcome Back'}
-        </h2>
+        <div className="text-center mb-6">
+          <h2 className="text-3xl font-bold text-orange-600 mb-2">
+            {isSignUp ? 'Create Account' : 'Welcome Back'}
+          </h2>
+          <p className="text-gray-600">
+            {isSignUp ? 'Join our community today!' : 'Please enter your credentials to sign in'}
+          </p>
+        </div>
         
         {error && (
           <div className="bg-red-50 text-red-500 p-3 rounded mb-4">
@@ -58,52 +124,88 @@ export default function AuthPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="relative">
+          <div className="space-y-1">
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email Address</label>
             <input
               type="email"
+              id="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
-              required
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all"
-              placeholder="Email"
+              className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all ${formErrors.email ? 'border-red-500' : 'border-gray-300'}`}
+              placeholder="Your email address"
             />
+            {formErrors.email && <p className="text-red-500 text-xs">{formErrors.email}</p>}
           </div>
 
-          <div className="relative">
+          <div className="space-y-1">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
             <input
               type="password"
+              id="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
-              required
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all"
-              placeholder="Password"
+              className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all ${formErrors.password ? 'border-red-500' : 'border-gray-300'}`}
+              placeholder="Your password"
             />
+            {formErrors.password && <p className="text-red-500 text-xs">{formErrors.password}</p>}
           </div>
 
           {isSignUp && (
             <>
-              <div className="relative">
+              <div className="space-y-1">
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700">Username</label>
+                <input
+                  type="text"
+                  id="username"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all ${formErrors.username ? 'border-red-500' : 'border-gray-300'}`}
+                  placeholder="Choose a username"
+                />
+                {formErrors.username && <p className="text-red-500 text-xs">{formErrors.username}</p>}
+              </div>
+
+              <div className="space-y-1">
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">Confirm Password</label>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all ${formErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'}`}
+                  placeholder="Confirm your password"
+                />
+                {formErrors.confirmPassword && <p className="text-red-500 text-xs">{formErrors.confirmPassword}</p>}
+              </div>
+
+              <div className="space-y-1">
+                <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">Phone Number</label>
                 <input
                   type="tel"
+                  id="phoneNumber"
                   name="phoneNumber"
                   value={formData.phoneNumber}
                   onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all"
-                  placeholder="Phone Number"
+                  className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all ${formErrors.phoneNumber ? 'border-red-500' : 'border-gray-300'}`}
+                  placeholder="Your phone number"
                 />
+                {formErrors.phoneNumber && <p className="text-red-500 text-xs">{formErrors.phoneNumber}</p>}
               </div>
 
-              <div className="relative">
+              <div className="space-y-1">
+                <label htmlFor="referralCode" className="block text-sm font-medium text-gray-700">Referral Code (Optional)</label>
                 <input
                   type="text"
+                  id="referralCode"
                   name="referralCode"
                   value={formData.referralCode}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all"
-                  placeholder="Referral Code (Optional)"
+                  className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all"
+                  placeholder="Enter referral code if you have one"
                 />
               </div>
             </>
@@ -112,9 +214,7 @@ export default function AuthPage() {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-3 rounded bg-orange-500 text-white font-semibold hover:bg-orange-600 transition-colors ${
-              loading ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
+            className={`w-full py-3 rounded bg-orange-500 text-white font-semibold hover:bg-orange-600 transition-colors ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             {loading ? (
               <span className="flex items-center justify-center">
@@ -145,8 +245,11 @@ export default function AuthPage() {
 
         <div className="mt-6 text-center">
           <button
-            onClick={() => setIsSignUp(!isSignUp)}
-            className="text-orange-600 hover:text-orange-700 transition-colors"
+            onClick={() => {
+              setIsSignUp(!isSignUp);
+              setFormErrors({});
+            }}
+            className="text-orange-600 hover:text-orange-700 hover:underline transition-colors font-medium"
           >
             {isSignUp
               ? 'Already have an account? Sign in'
@@ -156,4 +259,4 @@ export default function AuthPage() {
       </div>
     </div>
   );
-} 
+}

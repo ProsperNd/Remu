@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -18,6 +18,54 @@ export default function Header() {
   const { user, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [cartItemCount, setCartItemCount] = useState(0);
+
+  useEffect(() => {
+    // Function to get cart count from localStorage
+    const getCartCount = () => {
+      if (typeof window !== 'undefined') {
+        const cart = localStorage.getItem('cart');
+        if (cart) {
+          try {
+            const cartItems = JSON.parse(cart);
+            const itemCount = cartItems.reduce((total: number, item: any) => total + item.quantity, 0);
+            setCartItemCount(itemCount);
+          } catch (error) {
+            console.error('Error parsing cart data:', error);
+            setCartItemCount(0);
+          }
+        } else {
+          setCartItemCount(0);
+        }
+      }
+    };
+
+    // Initial cart count
+    getCartCount();
+
+    // Add event listener for storage changes
+    const handleStorageChange = () => {
+      getCartCount();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Custom event for cart updates
+    const handleCartUpdate = () => {
+      getCartCount();
+    };
+    
+    window.addEventListener('cartUpdated', handleCartUpdate);
+
+    // Check cart count every second (for updates from other components)
+    const interval = setInterval(getCartCount, 1000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('cartUpdated', handleCartUpdate);
+      clearInterval(interval);
+    };
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +96,7 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-2">
-            <span className="text-2xl font-bold text-white hover:text-secondary-200 transition">
+            <span className="text-2xl font-bold text-white hover:text-secondary transition">
               ReMu
             </span>
           </Link>
@@ -60,7 +108,7 @@ export default function Header() {
                 placeholder="Search for products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2 rounded-full bg-white focus:outline-none focus:ring-2 focus:ring-secondary pl-4 pr-10"
+                className="w-full px-4 py-2 rounded-full bg-white focus:outline-none focus:ring-2 focus:ring-primary-dark pl-4 pr-10"
               />
               <button
                 type="submit"
@@ -73,7 +121,7 @@ export default function Header() {
 
           <div className="flex items-center space-x-6">
             {user && (
-              <Link href="/referrals" className="text-white hover:text-secondary-200 relative">
+              <Link href="/referrals" className="text-white hover:text-secondary-dark relative">
                 <GiftIcon className="h-6 w-6" />
                 {user.points && user.points > 0 && (
                   <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
@@ -82,13 +130,13 @@ export default function Header() {
                 )}
               </Link>
             )}
-            <Link href="/wishlist" className="text-white hover:text-secondary-200">
+            <Link href="/wishlist" className="text-white hover:text-secondary-dark">
               <HeartIcon className="h-6 w-6" />
             </Link>
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="p-2 text-gray-600 hover:text-primary"
+                className="text-white hover:text-secondary-dark"
               >
                 <UserIcon className="h-6 w-6" />
               </button>
@@ -100,21 +148,21 @@ export default function Header() {
                       <>
                         <Link
                           href="/profile"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary"
                         >
                           Profile
                         </Link>
                         {user.isAdmin && (
                           <Link
                             href="/admin"
-                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary"
                           >
                             Admin Dashboard
                           </Link>
                         )}
                         <button
                           onClick={handleSignOut}
-                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary"
                         >
                           Sign Out
                         </button>
@@ -122,7 +170,7 @@ export default function Header() {
                     ) : (
                       <Link
                         href="/auth"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary"
                       >
                         Sign In
                       </Link>
@@ -131,14 +179,14 @@ export default function Header() {
                 </div>
               )}
             </div>
-            <Link href="/cart" className="text-white hover:text-secondary-200 relative">
+            <Link href="/cart" className="text-white hover:text-secondary-dark relative">
               <ShoppingCartIcon className="h-6 w-6" />
               <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                0
+                {cartItemCount}
               </span>
             </Link>
             {user?.isAdmin && (
-              <Link href="/admin" className="text-white hover:text-secondary-200">
+              <Link href="/admin" className="text-white hover:text-secondary-dark">
                 <ShieldCheckIcon className="h-6 w-6" />
               </Link>
             )}
@@ -149,12 +197,12 @@ export default function Header() {
       {/* Navigation */}
       <div className="bg-primary-dark">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex space-x-8 text-sm">
-            {['Today\'s Deals', 'New Arrivals', 'Women', 'Men', 'Kids', 'Beauty', 'Electronics'].map((item) => (
+          <nav className="flex space-x-8 text-sm overflow-x-auto">
+            {['Today\'s Deals', 'New Arrivals', 'Women', 'Men', 'Kids', 'Beauty', 'Electronics', 'Home & Kitchen', 'Sports'].map((item) => (
               <Link
                 key={item}
                 href={`/category/${item.toLowerCase().replace(/\s+/g, '-')}`}
-                className="text-white hover:text-secondary-200 py-3 px-2"
+                className="text-white hover:text-secondary-dark py-3 px-2 whitespace-nowrap"
               >
                 {item}
               </Link>

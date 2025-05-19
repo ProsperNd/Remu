@@ -9,10 +9,10 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        primary: '#3B82F6', // blue-500
-        'primary-dark': '#2563EB', // blue-600
-        secondary: '#F3F4F6', // gray-100
-        'secondary-dark': '#E5E7EB', // gray-200
+        primary: '#FF7F00', // Orange for primary color
+        'primary-dark': '#E67300', // Darker orange for hover/focus states
+        secondary: '#FFFFFF', // White as secondary color
+        'secondary-dark': '#F9F9F9', // Very light gray for secondary dark
       },
       container: {
         center: true,
